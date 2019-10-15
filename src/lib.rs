@@ -67,7 +67,6 @@ mod test {
 }
 
 use std::error::Error;
-use std::sync::mpsc;
 use std::thread;
 
 use rand;
@@ -128,11 +127,9 @@ impl Average {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let (tx, rx) = mpsc::channel();
     let mut handles = Vec::new();
 
     for _ in 0..config.thread_num {
-        let tx = tx.clone();
         let samples = config.samples;
         let sample_size = config.sample_size;
         handles.push(thread::spawn(move || {
@@ -150,19 +147,17 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 average.elements_count += 1;
                 average.average += (sum - average.average) / average.elements_count as f64;
             }
-            tx.send(average).unwrap();
+            average
         }));
     }
-
-    drop(tx);
 
     let mut average = Average {
         average: 0.0,
         elements_count: 0,
     };
 
-    for r_average in rx {
-        average = average.merge(r_average);
+    for handle in handles {
+        average = average.merge(handle.join().unwrap());
     }
 
     println!("{}", average.average);
