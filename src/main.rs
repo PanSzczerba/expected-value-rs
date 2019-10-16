@@ -57,7 +57,10 @@ fn main() {
     };
 
     if let Err(e) = expected_value::run(config) {
-        eprintln!("Error: Something went wrong during program execution: {}", e);
+        eprintln!(
+            "Error: Something went wrong during program execution: {}",
+            e
+        );
         process::exit(1)
     }
 }
